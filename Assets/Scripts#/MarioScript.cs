@@ -13,9 +13,10 @@ public class MarioScript : MonoBehaviour
     private Animator animator;
     public AudioSource Audio;
     public AudioClip powerUp, audioSalto;
+    public Goomba goomba;
 
     public float movX, fuerzaSalto, vidas = 4;
-    private bool mirandoDerecha = true, PuedeSaltar = false;
+    private bool mirandoDerecha = true, PuedeSaltar = false, EsGrande = false, Vivo = true;
 
     
 
@@ -49,10 +50,18 @@ public class MarioScript : MonoBehaviour
     void FixedUpdate()
     {
         // Mover al jugador................................................................................................................................................................................
-        Vector2 movimiento = new Vector2(movX * 3, movFisicas.velocity.y);
-        movFisicas.velocity = movimiento;
+        
 
+        if (Vivo)
+        { 
+            Vector2 movimiento = new Vector2(movX * 3, movFisicas.velocity.y);
+            movFisicas.velocity = movimiento;
 
+        }
+        else if(Vivo == false)
+        {
+            movFisicas.velocity = new Vector2(0, movFisicas.velocity.y);
+        }
         //Animaciones de movimiento........................................................................................................................................................................
         if (movX == 0 && vidas > 0)
         {
@@ -76,6 +85,16 @@ public class MarioScript : MonoBehaviour
         }
     }
 
+    // Muerte del personaje.................................................................................................................................................................
+    public void Muerte()
+    {
+        Vivo = false;
+        animator.SetBool("MarioMuere", true);
+        movFisicas.AddForce(new Vector2(movFisicas.velocity.x, fuerzaSalto));
+        Destroy(gameObject, 1f);
+    }
+
+    // Colisiones del personaje.................................................................................................................................................................
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Terrain"))
@@ -84,15 +103,35 @@ public class MarioScript : MonoBehaviour
             animator.SetBool("TocaSuelo", true);
             PuedeSaltar = true;
         }
+        if (collision.gameObject.CompareTag("Goomba"))
+        {
+            if(EsGrande == true)
+            {
+                animator.runtimeAnimatorController = MarioChikito as RuntimeAnimatorController;
+                movFisicas.AddForce(new Vector2(-movFisicas.velocity.x * fuerzaSalto, fuerzaSalto));
+                EsGrande = false;
+            }
+            else
+            {
+                Muerte();
+            }
+        }
     }
 
+    // Triggers del personaje.................................................................................................................................................................
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("champi"))
         {
             animator.runtimeAnimatorController = MarioGrande as RuntimeAnimatorController;
+            EsGrande = true;
             Audio.clip = powerUp;
             Audio.Play();
+        }
+        if (collision.gameObject.CompareTag("Goomba"))
+        {
+            movFisicas.AddForce(new Vector2(movFisicas.velocity.x, fuerzaSalto));
+            goomba.Morir();
         }
     }
 }
